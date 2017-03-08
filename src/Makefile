@@ -53,6 +53,7 @@ all: nuget-restore
 	$(MSBUILD) VS/FStar.sln
 	chmod a+x $(BIN)/tests.exe
 	chmod a+x $(BIN)/fstar.exe
+	chmod a+x $(BIN)/fabc-make.exe
 
 # SAD! Can't make clean if fslex and fsyacc haven't be restored... what...
 clean: nuget-restore
@@ -61,6 +62,7 @@ clean: nuget-restore
 # --------------------------------------------------------------------
 
 nuget-restore:
+	# $(MAKE) -C VS update-nuget
 	$(RUNTIME) VS/.nuget/NuGet.exe restore VS/FStar.sln
 
 nuget-clean:
@@ -272,3 +274,11 @@ wc-boot:
 
 ctags:
 	ctags --exclude=boot_fsts --exclude=boot_fstis --exclude=ocaml-output -R .
+
+FSTAR_HOME=..
+include $(FSTAR_HOME)/src/gmake/fstar.mk
+uregressions-cver: $(CVERCONFIG)
+	+make -C ../ulib all-cver
+	+make -C ../examples all-cver
+	$(CVEREXE) await -i $(CVERCONFIG) -ns
+	rm $(CVERCONFIG)
