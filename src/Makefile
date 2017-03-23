@@ -62,6 +62,7 @@ clean: nuget-restore
 # --------------------------------------------------------------------
 
 nuget-restore:
+	# $(MAKE) -C VS update-nuget
 	$(RUNTIME) VS/.nuget/NuGet.exe restore VS/FStar.sln
 
 nuget-clean:
