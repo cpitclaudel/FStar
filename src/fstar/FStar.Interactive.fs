@@ -381,17 +381,20 @@ let validate_interactive_query = function
     { qid = qid; qq = ProtocolViolation "Cannot use 'kind': 'syntax' with 'query': 'push'" }
   | other -> other
 
-let read_interactive_query stream : query =
+let parse_interactive_query query_js : query =
   try
-    match Util.read_line stream with
-    | None -> exit 0
-    | Some line ->
-      match Util.json_of_string line with
-      | None -> { qid = "?"; qq = ProtocolViolation "Json parsing failed." }
-      | Some request -> validate_interactive_query (unpack_interactive_query request)
+    validate_interactive_query (unpack_interactive_query query_js)
   with
   | InvalidQuery msg -> { qid = "?"; qq = ProtocolViolation msg }
   | UnexpectedJsonType (expected, got) -> wrap_js_failure "?" expected got
+
+let read_interactive_query stream : query =
+  match Util.read_line stream with
+  | None -> exit 0
+  | Some line ->
+    match Util.json_of_string line with
+    | None -> { qid = "?"; qq = ProtocolViolation "Json parsing failed." }
+    | Some request -> parse_interactive_query request
 
 let rec json_of_fstar_option = function
   | Options.Bool b -> JsonBool b
@@ -465,26 +468,33 @@ let write_json json =
   Util.print_raw (Util.string_of_json json);
   Util.print_raw "\n"
 
-let write_response qid status response =
+let json_of_response qid status response =
   let qid = JsonStr qid in
   let status = match status with
                | QueryOK -> JsonStr "success"
                | QueryNOK -> JsonStr "failure"
                | QueryViolatesProtocol -> JsonStr "protocol-violation" in
-  write_json (JsonAssoc [("kind", JsonStr "response");
-                         ("query-id", qid);
-                         ("status", status);
-                         ("response", response)])
+  JsonAssoc [("kind", JsonStr "response");
+             ("query-id", qid);
+             ("status", status);
+             ("response", response)]
+
+let write_response qid status response =
+  write_json (json_of_response qid status response)
+
+let json_of_message level contents =
+  JsonAssoc [("kind", JsonStr "message");
+             ("level", JsonStr level);
+             ("contents", JsonStr contents)]
 
 let write_message level contents =
-  write_json (JsonAssoc [("kind", JsonStr "message");
-                         ("level", JsonStr level);
-                         ("contents", JsonStr contents)])
+  write_json (json_of_message level contents)
+
+let json_of_hello =
+  JsonAssoc (("kind", JsonStr "protocol-info") :: json_of_protocol_info)
 
 let write_hello () =
-  let js_version = JsonInt interactive_protocol_vernum in
-  let js_features = JsonList (List.map JsonStr interactive_protocol_features) in
-  write_json (JsonAssoc (("kind", JsonStr "protocol-info") :: json_of_protocol_info))
+  write_json (json_of_hello)
 
 (******************************************************************************************)
 (* The main interactive loop *)
@@ -925,6 +935,14 @@ let run_query st : query' -> (query_status * json) * either<repl_state,int> = fu
   | Search term -> run_search st term
   | ProtocolViolation query -> run_protocol_violation st query
 
+(** This is the body of the JavaScript port's main loop. **)
+let single_repl_iteration js_query state =
+  let query = parse_interactive_query js_query in
+  let (status, response), state_opt = run_query state query.qq in
+  let js_response = json_of_response query.qid status response in
+  js_response, state_opt
+
+(** This is the main loop for the desktop version **)
 let rec go st : unit =
   let query = read_interactive_query st.repl_stdin in
   let (status, response), state_opt = run_query st query.qq in
@@ -949,9 +967,11 @@ let interactive_printer =
     printer_prwarning = write_message "warning";
     printer_prerror = write_message "error" }
 
-// filename is the name of the file currently edited
-let interactive_mode' (filename:string): unit =
-  write_hello ();
+let install_ide_mode_hooks () =
+  FStar.Util.set_printer interactive_printer;
+  FStar.Errors.set_handler interactive_error_handler
+
+let build_initial_repl_state (filename: string) =
   //type check prims and the dependencies
   let filenames, maybe_intf = deps_of_our_file filename in
   let env = tc_prims () in
@@ -967,27 +987,26 @@ let interactive_mode' (filename:string): unit =
     | None ->
         env
   in
+  { repl_line = 1; repl_column = 0; repl_fname = filename;
+    repl_stack = stack; repl_curmod = None;
+    repl_env = env; repl_ts = ts; repl_stdin = open_stdin () }
 
-  let init_st = { repl_line = 1; repl_column = 0; repl_fname = filename;
-                  repl_stack = stack; repl_curmod = None;
-                  repl_env = env; repl_ts = ts; repl_stdin = open_stdin () } in
-
-  if FStar.Options.record_hints() || FStar.Options.use_hints() then //and if we're recording or using hints
-    FStar.SMTEncoding.Solver.with_hints_db (List.hd (Options.file_list ())) (fun () -> go init_st)
-  else
-    go init_st
-
-let interactive_mode (filename:string): unit =
-  FStar.Util.set_printer interactive_printer;
-  FStar.Errors.set_handler interactive_error_handler;
-
-  if Option.isSome (Options.codegen())
-  then Util.print_warning "code-generation is not supported in interactive mode, ignoring the codegen flag";
-
+// filename is the name of the file currently edited
+let interactive_mode (filename: string): unit =
   try
-    interactive_mode' filename
+    install_ide_mode_hooks ();
+    write_hello ();
+    let init_st = build_initial_repl_state filename in
+
+    if Option.isSome (Options.codegen()) then
+      Util.print_warning "code-generation is not supported in interactive mode, ignoring the codegen flag";
+
+    if FStar.Options.record_hints() || FStar.Options.use_hints() then //and if we're recording or using hints
+      FStar.SMTEncoding.Solver.with_hints_db (List.hd (Options.file_list ())) (fun () -> go init_st)
+    else
+      go init_st
   with
   | e -> (// Revert to default handler since we won't have an opportunity to
-          // print errors ourselves.
-          FStar.Errors.set_handler FStar.Errors.default_handler;
-          raise e)
+         // print errors ourselves.
+         FStar.Errors.set_handler FStar.Errors.default_handler;
+         raise e)
