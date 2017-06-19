@@ -98,7 +98,7 @@ let go _ =
     | Success ->
         if Options.dep() <> None  //--dep: Just compute and print the transitive dependency graph; don't verify anything
         then Parser.Dep.print (Parser.Dep.collect Parser.Dep.VerifyAll filenames)
-        else if Options.interactive () then begin //--in
+        else if Options.interactive () then begin // --in or --ide
           if Options.explicit_deps () then begin
             Util.print_error "--explicit_deps incompatible with --in\n";
             exit 1
@@ -147,21 +147,25 @@ let go _ =
         else
           Util.print_error "no file provided\n"
 
+exception Exit of int
 
 let main () =
   try
     go ();
     cleanup ();
     exit 0
-  with | e ->
-    let trace = Util.trace_of_exn e in
-    (begin
-        if FStar.Errors.handleable e then FStar.Errors.err_exn e;
-        if (Options.trace_error()) then
-          Util.print2_error "Unexpected error\n%s\n%s\n" (Util.message_of_exn e) trace
-        else if not (FStar.Errors.handleable e) then
-          Util.print1_error "Unexpected error; please file a bug report, ideally with a minimized version of the source program that triggered the error.\n%s\n" (Util.message_of_exn e)
-     end;
-     cleanup();
-     report_errors [];
-     exit 1)
+  with
+  | Exit ec ->
+    // This exception is raised by the Javascript version of Sys.exit (used when
+    // compiling with js_of_ocaml)
+    raise (Exit ec)
+  | e ->
+    if FStar.Errors.handleable e then
+      FStar.Errors.err_exn e;
+    if Options.trace_error() then
+      Util.print2_error "Unexpected error\n%s\n%s\n" (Util.message_of_exn e) (Util.trace_of_exn e)
+    else if not (FStar.Errors.handleable e) then
+      Util.print1_error "Unexpected error; please file a bug report, ideally with a minimized version of the source program that triggered the error.\n%s\n" (Util.message_of_exn e);
+    cleanup();
+    report_errors [];
+    exit 1
