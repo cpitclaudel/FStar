@@ -258,7 +258,7 @@ let update_deps (filename:string) (m:modul_t) (stk:stack_t) (env:env_t) (ts:m_ti
 (* Reading queries and writing responses *)
 (***********************************************************************)
 
-let json_to_str = function
+let json_debug = function
   | JsonNull -> "null"
   | JsonBool b -> Util.format1 "bool (%s)" (if b then "true" else "false")
   | JsonInt i -> Util.format1 "int (%s)" (Util.string_of_int i)
@@ -326,7 +326,7 @@ let try_assoc key a =
 let wrap_js_failure qid expected got =
   { qid = qid;
     qq = ProtocolViolation (Util.format2 "JSON decoding failed: expected %s, got %s"
-                            expected (json_to_str got)) }
+                            expected (json_debug got)) }
 
 let unpack_interactive_query json =
   let assoc errloc key a =
@@ -381,9 +381,14 @@ let validate_interactive_query = function
     { qid = qid; qq = ProtocolViolation "Cannot use 'kind': 'syntax' with 'query': 'push'" }
   | other -> other
 
-let parse_interactive_query query_js : query =
+let deserialize_interactive_query query_js : query =
+  validate_interactive_query (unpack_interactive_query query_js)
+
+let parse_interactive_query query_str : query =
   try
-    validate_interactive_query (unpack_interactive_query query_js)
+    match Util.json_of_string query_str with
+    | None -> { qid = "?"; qq = ProtocolViolation "Json parsing failed." }
+    | Some query_js -> deserialize_interactive_query query_js
   with
   | InvalidQuery msg -> { qid = "?"; qq = ProtocolViolation msg }
   | UnexpectedJsonType (expected, got) -> wrap_js_failure "?" expected got
@@ -391,10 +396,7 @@ let parse_interactive_query query_js : query =
 let read_interactive_query stream : query =
   match Util.read_line stream with
   | None -> exit 0
-  | Some line ->
-    match Util.json_of_string line with
-    | None -> { qid = "?"; qq = ProtocolViolation "Json parsing failed." }
-    | Some request -> parse_interactive_query request
+  | Some line -> parse_interactive_query line
 
 let rec json_of_fstar_option = function
   | Options.Bool b -> JsonBool b
@@ -506,20 +508,22 @@ type repl_state = { repl_line: int; repl_column: int; repl_fname: string;
                     repl_env: env_t; repl_ts: m_timestamps;
                     repl_stdin: stream_reader }
 
-let json_of_repl_state st =
+let json_of_options () =
   let opts_and_defaults =
     let opt_docs = Util.smap_of_list (Options.docs ()) in
     let get_doc k = Util.smap_try_find opt_docs k in
     List.map (fun (k, v) -> (k, Options.get_option k, get_doc k, v)) Options.defaults in
+  JsonList (List.map (fun (name, value, doc, dflt) ->
+                      JsonAssoc [("name", JsonStr name);
+                                 ("value", json_of_fstar_option value);
+                                 ("default", json_of_fstar_option dflt);
+                                 ("documentation", json_of_opt JsonStr doc)])
+            opts_and_defaults)
+
+let json_of_repl_state st =
   [("loaded-dependencies",
     JsonList (List.map (fun (_, fstname, _, _) -> JsonStr fstname) st.repl_ts));
-   ("options",
-    JsonList (List.map (fun (name, value, doc, dflt) ->
-                        JsonAssoc [("name", JsonStr name);
-                                   ("value", json_of_fstar_option value);
-                                   ("default", json_of_fstar_option dflt);
-                                   ("documentation", json_of_opt JsonStr doc)])
-                       opts_and_defaults))]
+   ("options", json_of_options ())]
 
 let run_exit st =
   ((QueryOK, JsonNull), Inr 0)
@@ -936,11 +940,29 @@ let run_query st : query' -> (query_status * json) * either<repl_state,int> = fu
   | ProtocolViolation query -> run_protocol_violation st query
 
 (** This is the body of the JavaScript port's main loop. **)
-let single_repl_iteration js_query state =
-  let query = parse_interactive_query js_query in
+let js_repl_eval state query =
   let (status, response), state_opt = run_query state query.qq in
   let js_response = json_of_response query.qid status response in
   js_response, state_opt
+
+let js_repl_eval_js state query_js =
+  js_repl_eval state (deserialize_interactive_query query_js)
+
+let js_repl_eval_str state query_str =
+  let js_response, state_opt =
+    js_repl_eval state (parse_interactive_query query_str) in
+  (Util.string_of_json js_response), state_opt
+
+(** This too is called from FStar.js **)
+let js_repl_init_opts () =
+  let res, fnames = Options.parse_cmd_line () in
+  match fnames with
+  | _ :: _ -> failwith "repl_init: Unexpected: file names in option list"
+  | [] ->
+     match res with
+     | Getopt.Help -> failwith "repl_init: --help unexpected"
+     | Getopt.Error msg -> failwith ("repl_init: " ^ msg)
+     | Getopt.Success -> () (* FIXME could do more validation here *)
 
 (** This is the main loop for the desktop version **)
 let rec go st : unit =
@@ -971,7 +993,7 @@ let install_ide_mode_hooks () =
   FStar.Util.set_printer interactive_printer;
   FStar.Errors.set_handler interactive_error_handler
 
-let build_initial_repl_state (filename: string) =
+let init_repl (filename: string) =
   //type check prims and the dependencies
   let filenames, maybe_intf = deps_of_our_file filename in
   let env = tc_prims () in
@@ -996,7 +1018,7 @@ let interactive_mode (filename: string): unit =
   try
     install_ide_mode_hooks ();
     write_hello ();
-    let init_st = build_initial_repl_state filename in
+    let init_st = init_repl filename in
 
     if Option.isSome (Options.codegen()) then
       Util.print_warning "code-generation is not supported in interactive mode, ignoring the codegen flag";
