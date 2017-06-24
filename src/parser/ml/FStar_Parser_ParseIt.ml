@@ -34,10 +34,15 @@ let find_file filename =
       raise(Err (FStar_Util.format1 "Unable to open file: %s\n" filename))
 
 let read_file (filename:string) =
-  try
-    BatFile.with_file_in filename BatIO.read_all
-  with e -> raise (Err (FStar_Util.format1 "Unable to open file: %s\n" filename))
-
+  (* BatFile.with_file_in uses Unix.openfile (which isn't available in
+     js_of_ocaml) instead of Pervasives.open_in, so we don't use it here. *)
+  let channel =
+    try open_in filename
+    with e -> raise (Err (FStar_Util.format1 "Unable to open file: %s\n" filename)) in
+  BatPervasives.finally
+    (fun () -> close_in channel)
+    (fun channel -> really_input_string channel (in_channel_length channel))
+    channel
 
 let check_extension fn =
     if not (FStar_Util.ends_with fn ".fst")
