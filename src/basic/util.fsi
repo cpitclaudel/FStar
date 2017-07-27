@@ -356,6 +356,7 @@ val digest_of_file: string -> string
 val digest_of_string: string -> string
 
 val ensure_decimal: string -> string
+val measure_execution_time: (unit -> 'a) -> 'a
 
 (** Hints. *)
 type hint = {
