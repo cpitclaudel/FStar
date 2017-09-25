@@ -827,7 +827,9 @@ let run_tactic_on_typ:
                      FStar_TypeChecker_Env.is_native_tactic =
                        (uu___128_1604.FStar_TypeChecker_Env.is_native_tactic);
                      FStar_TypeChecker_Env.identifier_info =
-                       (uu___128_1604.FStar_TypeChecker_Env.identifier_info)
+                       (uu___128_1604.FStar_TypeChecker_Env.identifier_info);
+                     FStar_TypeChecker_Env.tc_hooks =
+                       (uu___128_1604.FStar_TypeChecker_Env.tc_hooks)
                    } in
                  let uu____1605 =
                    FStar_Tactics_Basic.proofstate_of_goal_ty env2 typ in

@@ -72,7 +72,9 @@ let set_hint_correlator:
             FStar_TypeChecker_Env.is_native_tactic =
               (uu___95_15.FStar_TypeChecker_Env.is_native_tactic);
             FStar_TypeChecker_Env.identifier_info =
-              (uu___95_15.FStar_TypeChecker_Env.identifier_info)
+              (uu___95_15.FStar_TypeChecker_Env.identifier_info);
+            FStar_TypeChecker_Env.tc_hooks =
+              (uu___95_15.FStar_TypeChecker_Env.tc_hooks)
           }
       | FStar_Pervasives_Native.None  ->
           let lids = FStar_Syntax_Util.lids_of_sigelt se in
@@ -146,7 +148,9 @@ let set_hint_correlator:
             FStar_TypeChecker_Env.is_native_tactic =
               (uu___96_31.FStar_TypeChecker_Env.is_native_tactic);
             FStar_TypeChecker_Env.identifier_info =
-              (uu___96_31.FStar_TypeChecker_Env.identifier_info)
+              (uu___96_31.FStar_TypeChecker_Env.identifier_info);
+            FStar_TypeChecker_Env.tc_hooks =
+              (uu___96_31.FStar_TypeChecker_Env.tc_hooks)
           }
 let log: FStar_TypeChecker_Env.env -> Prims.bool =
   fun env  ->
@@ -1083,7 +1087,10 @@ let tc_eff_decl:
                                                   (uu___100_1280.FStar_TypeChecker_Env.is_native_tactic);
                                                 FStar_TypeChecker_Env.identifier_info
                                                   =
-                                                  (uu___100_1280.FStar_TypeChecker_Env.identifier_info)
+                                                  (uu___100_1280.FStar_TypeChecker_Env.identifier_info);
+                                                FStar_TypeChecker_Env.tc_hooks
+                                                  =
+                                                  (uu___100_1280.FStar_TypeChecker_Env.tc_hooks)
                                               } in
                                             let br =
                                               check_and_gen' env3
@@ -1246,7 +1253,9 @@ let tc_eff_decl:
                                                (uu___101_1413.FStar_TypeChecker_Env.is_native_tactic);
                                              FStar_TypeChecker_Env.identifier_info
                                                =
-                                               (uu___101_1413.FStar_TypeChecker_Env.identifier_info)
+                                               (uu___101_1413.FStar_TypeChecker_Env.identifier_info);
+                                             FStar_TypeChecker_Env.tc_hooks =
+                                               (uu___101_1413.FStar_TypeChecker_Env.tc_hooks)
                                            } in
                                          ((let uu____1415 =
                                              FStar_TypeChecker_Env.debug env1
@@ -3543,7 +3552,9 @@ let tc_decl:
                               FStar_TypeChecker_Env.is_native_tactic =
                                 (uu___112_5088.FStar_TypeChecker_Env.is_native_tactic);
                               FStar_TypeChecker_Env.identifier_info =
-                                (uu___112_5088.FStar_TypeChecker_Env.identifier_info)
+                                (uu___112_5088.FStar_TypeChecker_Env.identifier_info);
+                              FStar_TypeChecker_Env.tc_hooks =
+                                (uu___112_5088.FStar_TypeChecker_Env.tc_hooks)
                             } in
                           let lift1 =
                             match lift with
@@ -4134,7 +4145,9 @@ let tc_decl:
                          FStar_TypeChecker_Env.is_native_tactic =
                            (uu___121_6401.FStar_TypeChecker_Env.is_native_tactic);
                          FStar_TypeChecker_Env.identifier_info =
-                           (uu___121_6401.FStar_TypeChecker_Env.identifier_info)
+                           (uu___121_6401.FStar_TypeChecker_Env.identifier_info);
+                         FStar_TypeChecker_Env.tc_hooks =
+                           (uu___121_6401.FStar_TypeChecker_Env.tc_hooks)
                        }) e in
                   match uu____6392 with
                   | ({
@@ -4788,7 +4801,9 @@ let add_sigelt_to_env:
                       FStar_TypeChecker_Env.is_native_tactic =
                         (uu___130_7674.FStar_TypeChecker_Env.is_native_tactic);
                       FStar_TypeChecker_Env.identifier_info =
-                        (uu___130_7674.FStar_TypeChecker_Env.identifier_info)
+                        (uu___130_7674.FStar_TypeChecker_Env.identifier_info);
+                      FStar_TypeChecker_Env.tc_hooks =
+                        (uu___130_7674.FStar_TypeChecker_Env.tc_hooks)
                     }
                 | FStar_Pervasives_Native.None  ->
                     let uu___131_7677 = env in
@@ -4851,7 +4866,9 @@ let add_sigelt_to_env:
                       FStar_TypeChecker_Env.is_native_tactic =
                         (uu___131_7677.FStar_TypeChecker_Env.is_native_tactic);
                       FStar_TypeChecker_Env.identifier_info =
-                        (uu___131_7677.FStar_TypeChecker_Env.identifier_info)
+                        (uu___131_7677.FStar_TypeChecker_Env.identifier_info);
+                      FStar_TypeChecker_Env.tc_hooks =
+                        (uu___131_7677.FStar_TypeChecker_Env.tc_hooks)
                     })
            | FStar_Syntax_Syntax.ResetOptions uu____7694 ->
                let uu____7697 = FStar_Options.using_facts_from () in
@@ -4925,7 +4942,9 @@ let add_sigelt_to_env:
                       FStar_TypeChecker_Env.is_native_tactic =
                         (uu___130_7782.FStar_TypeChecker_Env.is_native_tactic);
                       FStar_TypeChecker_Env.identifier_info =
-                        (uu___130_7782.FStar_TypeChecker_Env.identifier_info)
+                        (uu___130_7782.FStar_TypeChecker_Env.identifier_info);
+                      FStar_TypeChecker_Env.tc_hooks =
+                        (uu___130_7782.FStar_TypeChecker_Env.tc_hooks)
                     }
                 | FStar_Pervasives_Native.None  ->
                     let uu___131_7785 = env in
@@ -4988,7 +5007,9 @@ let add_sigelt_to_env:
                       FStar_TypeChecker_Env.is_native_tactic =
                         (uu___131_7785.FStar_TypeChecker_Env.is_native_tactic);
                       FStar_TypeChecker_Env.identifier_info =
-                        (uu___131_7785.FStar_TypeChecker_Env.identifier_info)
+                        (uu___131_7785.FStar_TypeChecker_Env.identifier_info);
+                      FStar_TypeChecker_Env.tc_hooks =
+                        (uu___131_7785.FStar_TypeChecker_Env.tc_hooks)
                     })
            | uu____7802 -> env)
       | FStar_Syntax_Syntax.Sig_new_effect_for_free uu____7803 -> env
@@ -5251,7 +5272,9 @@ let tc_partial_modul:
            FStar_TypeChecker_Env.is_native_tactic =
              (uu___133_8511.FStar_TypeChecker_Env.is_native_tactic);
            FStar_TypeChecker_Env.identifier_info =
-             (uu___133_8511.FStar_TypeChecker_Env.identifier_info)
+             (uu___133_8511.FStar_TypeChecker_Env.identifier_info);
+           FStar_TypeChecker_Env.tc_hooks =
+             (uu___133_8511.FStar_TypeChecker_Env.tc_hooks)
          } in
        (env1.FStar_TypeChecker_Env.solver).FStar_TypeChecker_Env.push msg;
        (let env2 =
@@ -5364,7 +5387,9 @@ let check_exports:
             FStar_TypeChecker_Env.is_native_tactic =
               (uu___136_8623.FStar_TypeChecker_Env.is_native_tactic);
             FStar_TypeChecker_Env.identifier_info =
-              (uu___136_8623.FStar_TypeChecker_Env.identifier_info)
+              (uu___136_8623.FStar_TypeChecker_Env.identifier_info);
+            FStar_TypeChecker_Env.tc_hooks =
+              (uu___136_8623.FStar_TypeChecker_Env.tc_hooks)
           } in
         let check_term lid univs1 t =
           let uu____8634 = FStar_Syntax_Subst.open_univ_vars univs1 t in
@@ -5650,7 +5675,9 @@ let check_module:
            FStar_TypeChecker_Env.is_native_tactic =
              (uu___138_8923.FStar_TypeChecker_Env.is_native_tactic);
            FStar_TypeChecker_Env.identifier_info =
-             (uu___138_8923.FStar_TypeChecker_Env.identifier_info)
+             (uu___138_8923.FStar_TypeChecker_Env.identifier_info);
+           FStar_TypeChecker_Env.tc_hooks =
+             (uu___138_8923.FStar_TypeChecker_Env.tc_hooks)
          } in
        let uu____8926 = tc_modul env1 m in
        match uu____8926 with
