@@ -740,7 +740,7 @@ let json_of_repl_state (st: repl_state) =
 
   let deps =
     match st with
-    | PartialReplState pst -> []
+    | PartialReplState pst -> pst.prepl_deps
     | FullReplState st -> st.repl_deps in
   JsonAssoc
     [("loaded-dependencies",
